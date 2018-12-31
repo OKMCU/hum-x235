@@ -16,13 +16,34 @@
 #define IO_LIGHT_G    RA4
 #define IO_FAN        RA0
 #define IO_KEY        RA2
+
+#define COLOR_SPEED   7000
+#define COLOR_HOLD    250000
 //===========================================================
 //Variable definition
 //===========================================================
+uint8_t mode = 0;
 uint8_t color_r = 0;
 uint8_t color_g = 0;
 uint8_t color_b = 10;
 uint8_t color_cnt = 0;
+uint8_t color_r_tar = 0;
+uint8_t color_g_tar = 0;
+uint8_t color_b_tar = 0;
+uint8_t color_id = 0;
+uint16_t color_speed = 0;
+uint32_t color_hold = 0;
+
+const uint8_t color_table[7][3] = {
+    {255, 0, 0},
+    {255, 255, 0},
+    {0, 255, 0},
+    {0, 255, 255},
+    {0, 0, 255},
+    {255, 0, 255},
+    {255, 255, 255},
+};
+
 //===========================================================
 //Funtion name£ºinterrupt ISR
 //parameters£ºÎÞ
@@ -72,7 +93,50 @@ void device_init(void)
 main()
 {
     device_init();
-    while(1);
+
+    mode = 1;
+    color_r_tar = color_table[color_id][0];
+    color_g_tar = color_table[color_id][1]; 
+    color_b_tar = color_table[color_id][2];
+    color_speed = COLOR_SPEED;
+    
+    while(1)
+    {
+        if( mode == 1 )
+        {
+            if( color_hold == 0 )
+            {
+                color_speed++;
+                if( color_speed > COLOR_SPEED )
+                {
+                    color_speed = 0;
+                    
+                    if     ( color_r < color_r_tar )    {color_r++;}
+                    else if( color_r > color_r_tar )    {color_r--;}
+                    if     ( color_g < color_g_tar )    {color_g++;}
+                    else if( color_g > color_g_tar )    {color_g--;}
+                    if     ( color_b < color_b_tar )    {color_b++;}
+                    else if( color_b > color_b_tar )    {color_b--;}
+
+                    if( color_r == color_r_tar && color_g == color_g_tar && color_b == color_b_tar )
+                    {
+                        color_id++;
+                        if( color_id > 6 )
+                            color_id = 0;
+                        color_r_tar = color_table[color_id][0];
+                        color_g_tar = color_table[color_id][1]; 
+                        color_b_tar = color_table[color_id][2];
+                        
+                        color_hold = COLOR_HOLD;
+                    }
+                }
+            }
+            else
+            {
+                color_hold--;
+            }
+        }
+    }
     
 }
 //===========================================================
