@@ -17,22 +17,24 @@
 #define IO_FAN        RA0
 #define IO_KEY        RA2
 
-#define COLOR_SPEED   7000
-#define COLOR_HOLD    250000
+#define KEY_DEBOUNCE  50
+#define COLOR_SPEED   23
+#define COLOR_HOLD    1000
 //===========================================================
 //Variable definition
 //===========================================================
 uint8_t mode = 0;
+uint8_t key_debounce = 0;
 uint8_t color_r = 0;
 uint8_t color_g = 0;
-uint8_t color_b = 10;
+uint8_t color_b = 0;
 uint8_t color_cnt = 0;
 uint8_t color_r_tar = 0;
 uint8_t color_g_tar = 0;
 uint8_t color_b_tar = 0;
 uint8_t color_id = 0;
 uint16_t color_speed = 0;
-uint32_t color_hold = 0;
+uint16_t color_hold = 0;
 
 const uint8_t color_table[7][3] = {
     {255, 0, 0},
@@ -94,14 +96,56 @@ main()
 {
     device_init();
 
-    mode = 1;
-    color_r_tar = color_table[color_id][0];
-    color_g_tar = color_table[color_id][1]; 
-    color_b_tar = color_table[color_id][2];
-    color_speed = COLOR_SPEED;
+    //mode = 1;
+    //color_r_tar = color_table[color_id][0];
+    //color_g_tar = color_table[color_id][1]; 
+    //color_b_tar = color_table[color_id][2];
+    //color_speed = COLOR_SPEED;
     
     while(1)
     {
+        //Key scan
+        if( IO_KEY )
+        {
+            key_debounce = 0;
+        }
+        else
+        {
+            if( key_debounce < KEY_DEBOUNCE )
+            {
+                key_debounce++;
+                if( key_debounce == KEY_DEBOUNCE )
+                {
+                    //Key enter
+                    mode++;
+                    if( mode > 2 )
+                        mode = 0;
+
+                    if( mode == 0 )
+                    {
+                        IO_FAN = 0;
+                        color_r = 0;
+                        color_g = 0;
+                        color_b = 0;
+                    }
+                    else if( mode == 1 )
+                    {
+                        IO_FAN = 1;
+                        color_r_tar = color_table[color_id][0];
+                        color_g_tar = color_table[color_id][1]; 
+                        color_b_tar = color_table[color_id][2];
+                        color_speed = COLOR_SPEED;
+                    }
+                    else
+                    {
+                        color_r = 0;
+                        color_g = 0;
+                        color_b = 0;
+                    }
+                }
+            }
+        }
+        
         if( mode == 1 )
         {
             if( color_hold == 0 )
@@ -136,6 +180,8 @@ main()
                 color_hold--;
             }
         }
+
+        __delay_ms(1);
     }
     
 }
